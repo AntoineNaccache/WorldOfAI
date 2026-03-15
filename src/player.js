@@ -54,11 +54,15 @@ export class Player {
     dir.applyEuler(new THREE.Euler(0, this.euler.y, 0));
     this.camera.position.addScaledVector(dir, this.speed * dt);
 
-    // Simple room boundary clamp
-    this.camera.position.x = Math.max(-5.5, Math.min(5.5, this.camera.position.x));
-    this.camera.position.z = Math.max(-5.5, Math.min(5.5, this.camera.position.z));
+    // Room boundary clamp (updated by setBounds on room transition)
+    const hw = this._halfW ?? 5.5;
+    const hd = this._halfD ?? 5.5;
+    this.camera.position.x = Math.max(-hw + 0.3, Math.min(hw - 0.3, this.camera.position.x));
+    this.camera.position.z = Math.max(-hd + 0.3, Math.min(hd - 0.3, this.camera.position.z));
     this.camera.position.y = this.height;
   }
+
+  setBounds(halfW, halfD) { this._halfW = halfW; this._halfD = halfD; }
 
   lock() { this.canvas.requestPointerLock(); }
   unlock() { document.exitPointerLock(); }

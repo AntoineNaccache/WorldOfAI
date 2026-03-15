@@ -186,6 +186,58 @@
     }
     #loading-screen.hidden { display: none; }
     #loading-text { font-size: 14px; margin-top: 12px; }
+
+    /* Generation log HUD */
+    #gen-log {
+      position: fixed; bottom: 24px; right: 24px;
+      width: 300px; z-index: 150; pointer-events: none;
+      display: flex; flex-direction: column; gap: 4px; align-items: flex-end;
+    }
+    .gen-entry {
+      background: rgba(0,0,0,0.75);
+      border-left: 2px solid #00ff88;
+      color: #ccc; font-size: 11px; padding: 5px 10px;
+      border-radius: 2px; max-width: 100%;
+      animation: slideIn 0.2s ease;
+      transition: opacity 0.5s;
+    }
+    .gen-entry.done   { border-left-color: #00ff88; color: #00ff88; }
+    .gen-entry.error  { border-left-color: #ff4444; color: #ff6666; }
+    .gen-entry.step   { border-left-color: #ffaa00; color: #ffcc66; }
+    .gen-entry.fade   { opacity: 0; }
+    /* Victory screen */
+    #victory-screen {
+      position: fixed; inset: 0; z-index: 500;
+      background: #000;
+      display: flex; align-items: center; justify-content: center;
+      animation: victoryFadeIn 2s ease forwards;
+    }
+    #victory-screen.hidden { display: none; }
+    @keyframes victoryFadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    #victory-content {
+      text-align: center; color: #d4af37;
+      font-family: 'Courier New', monospace;
+      max-width: 500px; padding: 2rem;
+      animation: victoryRise 2s ease forwards;
+    }
+    @keyframes victoryRise {
+      from { transform: translateY(20px); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+    #victory-fleur { font-size: 3rem; margin-bottom: 1rem; animation: spin 8s linear infinite; display: inline-block; }
+    #victory-title { font-size: 2.8rem; letter-spacing: 6px; color: #d4af37; margin-bottom: 0.3rem; }
+    .victory-sub { color: #888; font-size: 0.85rem; letter-spacing: 4px; margin-bottom: 1.5rem; }
+    .victory-divider { width: 200px; height: 1px; background: #333; margin: 1.2rem auto; }
+    .victory-line { color: #ccc; font-size: 0.95rem; margin: 0.5rem 0; line-height: 1.7; }
+    .victory-date { color: #d4af37; font-size: 0.8rem; letter-spacing: 2px; margin-top: 1.2rem; }
+
+    @keyframes slideIn {
+      from { transform: translateX(20px); opacity: 0; }
+      to   { transform: translateX(0);    opacity: 1; }
+    }
     .spinner {
       width: 40px; height: 40px; border: 2px solid #1a1a1a;
       border-top-color: #00ff88; border-radius: 50%;
@@ -211,6 +263,23 @@
       <br>
       <button id="start-btn">ENTER</button>
       <p style="margin-top:1.5rem; color:#444; font-size:12px">WASD to move · Mouse to look · E to interact · ESC to close UI</p>
+    </div>
+  </div>
+
+  <div id="gen-log"></div>
+
+  <div id="victory-screen" class="hidden">
+    <div id="victory-content">
+      <div id="victory-fleur">⚜</div>
+      <h1 id="victory-title">HISTOIRE SAUVÉE</h1>
+      <p class="victory-sub">HISTORY SAVED</p>
+      <div class="victory-divider"></div>
+      <p class="victory-line">Henri IV turns his carriage back toward the Louvre.</p>
+      <p class="victory-line">Rue de la Ferronnerie falls silent.</p>
+      <p class="victory-line">Ravaillac's blade finds no king.</p>
+      <div class="victory-divider"></div>
+      <p class="victory-date">May 14, 1610 — Paris, France</p>
+      <p class="victory-date" style="color:#888; margin-top:0.5rem">Timeline: rewritten.</p>
     </div>
   </div>
 

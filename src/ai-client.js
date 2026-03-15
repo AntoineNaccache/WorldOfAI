@@ -19,7 +19,7 @@ export async function chatWithNPC(npcDef, history, message, claudeKey) {
   });
   if (!res.ok) throw new Error(`Server error ${res.status}`);
   const data = await res.json();
-  return data.reply || '...';
+  return { reply: data.reply || '...', win: data.win ?? false };
 }
 
 export async function pollTripoTask(taskId, maxWaitMs = 120000) {
