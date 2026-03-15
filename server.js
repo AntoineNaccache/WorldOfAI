@@ -33,7 +33,7 @@ app.use('/models', express.static(cacheDir));
 
 // ---- Claude proxy ----
 app.post('/api/claude', async (req, res) => {
-  const key = CLAUDE_KEY || req.headers['x-claude-key'];
+  const key = req.headers["x-claude-key"] || CLAUDE_KEY;
   if (!key) return res.status(401).json({ error: 'No Claude API key' });
   try {
     const r = await fetch(CLAUDE_BASE, {
@@ -157,7 +157,7 @@ Be creative! Match room theme to the user prompt. Vibrant and distinct colors. A
 
 app.post('/api/generate-world', async (req, res) => {
   const { prompt, claudeKey } = req.body;
-  const key = CLAUDE_KEY || claudeKey;
+  const key = claudeKey || CLAUDE_KEY;
   if (!key) return res.status(401).json({ error: 'No Claude API key' });
 
   try {
@@ -234,7 +234,7 @@ async function startTripoTask(prompt) {
 // ---- NPC Chat ----
 app.post('/api/chat-npc', async (req, res) => {
   const { npcDef, history, message, claudeKey } = req.body;
-  const key = CLAUDE_KEY || claudeKey;
+  const key = claudeKey || CLAUDE_KEY;
   if (!key) return res.status(401).json({ error: 'No Claude API key' });
 
   const system = `You are ${npcDef.name}. ${npcDef.description}

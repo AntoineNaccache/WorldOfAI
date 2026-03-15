@@ -101,6 +101,11 @@ function interact() {
 // ---- Start ----
 startBtn.addEventListener('click', () => {
   claudeKey = apiKeyInput?.value?.trim() || '';
+  if (!claudeKey) {
+    apiKeyInput.style.borderColor = '#ff4444';
+    apiKeyInput.placeholder = 'API key required!';
+    return;
+  }
   overlay.classList.add('hidden');
   initGame();
 });
