@@ -119,9 +119,23 @@ function interact() {
 }
 
 // ---- Start -------------------------------------------------------------------
+// Hide API key input if server already has a key configured
+(async () => {
+  try {
+    const res = await fetch('/api/has-key');
+    const { hasKey } = await res.json();
+    if (hasKey) {
+      document.getElementById('api-key-section')?.remove();
+    }
+  } catch {}
+})();
+
 startBtn.addEventListener('click', async () => {
   claudeKey = apiKeyInput?.value?.trim() || '';
-  if (!claudeKey) {
+  // If no key entered but server has one, that's fine — server will use its own
+  const res = await fetch('/api/has-key').catch(() => ({ json: () => ({}) }));
+  const { hasKey } = await res.json().catch(() => ({}));
+  if (!claudeKey && !hasKey) {
     apiKeyInput.style.borderColor = '#ff4444';
     apiKeyInput.placeholder = 'API key required!';
     return;

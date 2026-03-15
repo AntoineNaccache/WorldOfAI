@@ -236,6 +236,11 @@ app.get('/api/tripo/task/:id', async (req, res) => {
   }
 });
 
+// ---- Server key check (lets frontend skip API key input) ----
+app.get('/api/has-key', (req, res) => {
+  res.json({ hasKey: !!CLAUDE_KEY });
+});
+
 // ---- Pre-generated assets status ----
 app.get('/api/pregenerated', (req, res) => {
   res.json(pregenStatus);

@@ -257,10 +257,12 @@
       <h1>// AI WORLD //</h1>
       <p>A first-person game where AI generates your world.</p>
       <p style="margin-top:1rem; color:#555; font-size:12px">Start in your bedroom. Use the computer to generate new worlds with AI.</p>
-      <p style="margin-top:1.2rem; color:#888; font-size:12px">Anthropic API key (required):</p>
-      <input id="api-key-input" type="password" placeholder="sk-ant-..." />
-      <span id="api-key-label">Used only to call the Claude API for world generation.</span>
-      <br>
+      <div id="api-key-section" style="margin-top:1.2rem">
+        <p style="color:#888; font-size:12px">Anthropic API key (required):</p>
+        <input id="api-key-input" type="password" placeholder="sk-ant-..." />
+        <span id="api-key-label">Used only to call the Claude API for world generation.</span>
+        <br>
+      </div>
       <button id="start-btn">ENTER</button>
       <p style="margin-top:1.5rem; color:#444; font-size:12px">WASD to move · Mouse to look · E to interact · ESC to close UI</p>
     </div>
