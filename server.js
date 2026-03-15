@@ -38,7 +38,8 @@ const pregenStatus = {
   martyMcFly:    { status: 'pending', modelUrl: null, animatedModelUrl: null },
   alexandreDumas:{ status: 'pending', modelUrl: null, animatedModelUrl: null },
   delorean:      { status: 'pending', modelUrl: null },
-  royalCarriage: { status: 'pending', modelUrl: null }
+  royalCarriage: { status: 'pending', modelUrl: null },
+  dumasBookshelf:{ status: 'pending', modelUrl: null }
 };
 
 // Persist task IDs so animation pipeline can resume after server restart
@@ -146,12 +147,12 @@ const DUMAS_ROOM_DEF = {
     emoji: '✍️'
   },
   object: {
-    name: 'Historical Manuscripts',
+    name: 'Antique Bookshelves',
     shape: 'box',
-    color: '#c8a830',
-    scale: [0.8, 0.6, 1.0],
-    position: [2.5, 0, -2],
-    interactionText: 'Stacks of manuscripts about French history. One bears the title: "Henri IV et l\'assassin Ravaillac — La mort d\'un roi".'
+    color: '#5c3010',
+    scale: [1.8, 2.4, 0.4],
+    position: [-3.5, 0, -4.5],
+    interactionText: 'Floor-to-ceiling shelves overflowing with chronicles of French kings, historical manuscripts, and Dumas\'s own works. One spine reads: "Henri IV — La Mort d\'un Roi".'
   },
   _isDumas: true
 };
@@ -240,6 +241,23 @@ app.get('/api/pregenerated', (req, res) => {
   res.json(pregenStatus);
 });
 
+app.get('/api/pregenerated/status', (req, res) => {
+  const rows = PREGEN_ASSETS.map(a => {
+    const s = pregenStatus[a.key];
+    const modelStr = s.modelUrl
+      ? '✓ cached'
+      : s.status === 'pending' ? '⏳ generating…' : '✗ missing';
+    let animStr = '— n/a';
+    if (a.animate) {
+      if (s.animatedModelUrl)          animStr = '✓ cached';
+      else if (savedTaskIds[a.key])    animStr = '⏳ pipeline running…';
+      else                             animStr = '⏳ starting fresh…';
+    }
+    return `${a.key.padEnd(16)}  model: ${modelStr.padEnd(18)}  anim: ${animStr}`;
+  });
+  res.type('text').send(rows.join('\n'));
+});
+
 // ---- World generation (Claude + Tripo combined) ----
 const WORLD_GEN_SYSTEM = `You are a world generator for a first-person 3D game.
 When given a user prompt, respond ONLY with valid JSON (no markdown, no explanation) describing a new room to generate.
@@ -319,7 +337,8 @@ app.post('/api/generate-world', async (req, res) => {
     // Fast-path: Alexandre Dumas trigger
     if (isDumasPrompt(prompt)) {
       const worldDef = JSON.parse(JSON.stringify(DUMAS_ROOM_DEF));
-      if (bestUrl('alexandreDumas')) worldDef.npc._pregenModelUrl = bestUrl('alexandreDumas');
+      if (bestUrl('alexandreDumas'))  worldDef.npc._pregenModelUrl    = bestUrl('alexandreDumas');
+      if (bestUrl('dumasBookshelf'))  worldDef.object._pregenModelUrl = bestUrl('dumasBookshelf');
       return res.json(worldDef);
     }
 
@@ -438,7 +457,9 @@ const PREGEN_ASSETS = [
   { key: 'delorean',       file: 'delorean.glb',         animate: false,
     prompt: 'DeLorean DMC-12 stainless steel sports car gull-wing doors open time machine flux capacitor glowing wires 1985 Back to the Future vehicle parked' },
   { key: 'royalCarriage',  file: 'royal-carriage.glb',   animate: false,
-    prompt: '17th century French royal horse carriage golden gilded ornate wood large wheels open coach historical 1610 Paris transportation side view' }
+    prompt: '17th century French royal horse carriage golden gilded ornate wood large wheels open coach historical 1610 Paris transportation side view' },
+  { key: 'dumasBookshelf', file: 'dumas-bookshelf.glb',  animate: false,
+    prompt: 'tall antique wooden bookshelf floor to ceiling dark oak shelves filled with old leather-bound books manuscripts 19th century French library study' }
 ];
 
 async function preGenerateAssets() {
@@ -471,10 +492,25 @@ async function preGenerateAssets() {
   // Generate missing static models sequentially, then start animation pipeline
   for (const a of PREGEN_ASSETS) {
     if (pregenStatus[a.key].status === 'ready') {
-      // Model cached — kick off animation pipeline if needed and task ID saved
-      if (a.animate && !pregenStatus[a.key].animatedModelUrl && savedTaskIds[a.key]) {
-        console.log(`   Resuming animation pipeline for ${a.key}…`);
-        animatePipeline(savedTaskIds[a.key], a.key, a.animFile).catch(() => {});
+      if (a.animate && !pregenStatus[a.key].animatedModelUrl) {
+        if (savedTaskIds[a.key]) {
+          console.log(`   Resuming animation pipeline for ${a.key}…`);
+          animatePipeline(savedTaskIds[a.key], a.key, a.animFile).catch(() => {});
+        } else {
+          // No task ID saved — generate a fresh model to get one for the animation pipeline
+          console.log(`   No task ID for ${a.key} animation — starting fresh pipeline…`);
+          (async () => {
+            try {
+              const taskId = await startTripoTask(a.prompt);
+              if (!taskId) return;
+              persistTaskId(a.key, taskId);
+              // Must wait for the model task to complete before animate_rig can use it
+              console.log(`   [anim] Waiting for ${a.key} model task to finish…`);
+              const done = await _pollRaw(taskId);
+              if (done) animatePipeline(taskId, a.key, a.animFile).catch(() => {});
+            } catch (e) { console.error(`   [anim] fresh-pipeline error for ${a.key}:`, e.message); }
+          })();
+        }
       }
       continue;
     }
@@ -508,12 +544,29 @@ async function animatePipeline(modelTaskId, key, animFile, maxWait = 900000) {
   }
 
   try {
+    // Step 0: verify base model task is complete — wait if still running
+    try {
+      const checkRes = await fetch(`${TRIPO_BASE}/task/${modelTaskId}`, {
+        headers: { 'Authorization': `Bearer ${TRIPO_KEY}` }
+      });
+      const checkData = await checkRes.json();
+      const baseStatus = checkData.data?.status?.toLowerCase();
+      if (baseStatus !== 'success') {
+        console.log(`   [anim] ${key} base model not ready (${baseStatus}) — waiting…`);
+        const done = await _pollRaw(modelTaskId, maxWait);
+        if (!done) throw new Error('Base model task failed or timed out');
+      }
+    } catch (e) {
+      if (e.message.includes('Base model')) throw e;
+      // If we can't check status, proceed anyway and let animate_rig report the error
+    }
+
     // Step 1: animate_rig
     console.log(`   [anim] Rigging ${key}…`);
     const rigRes = await fetch(`${TRIPO_BASE}/task`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${TRIPO_KEY}` },
-      body: JSON.stringify({ type: 'animate_rig', draft_model_task_id: modelTaskId })
+      body: JSON.stringify({ type: 'animate_rig', original_model_task_id: modelTaskId })
     });
     const rigData = await rigRes.json();
     if (rigData.code !== 0) throw new Error(`Rig failed: ${rigData.message}`);
@@ -524,15 +577,15 @@ async function animatePipeline(modelTaskId, key, animFile, maxWait = 900000) {
     const rigDone = await _pollRaw(rigTaskId, maxWait);
     if (!rigDone) throw new Error('Rig task timed out or failed');
 
-    // Step 2: animate_retarget with idle preset
+    // Step 2: animate_retarget with idle animation
     console.log(`   [anim] Retargeting ${key}…`);
     const retargetRes = await fetch(`${TRIPO_BASE}/task`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${TRIPO_KEY}` },
       body: JSON.stringify({
         type: 'animate_retarget',
-        draft_model_task_id: rigTaskId,
-        animation: { preset_id: 'preset:idle01' }
+        original_model_task_id: rigTaskId,
+        animation: 'IDLE'
       })
     });
     const retargetData = await retargetRes.json();

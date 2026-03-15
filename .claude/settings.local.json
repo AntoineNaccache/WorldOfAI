@@ -4,7 +4,10 @@
       "WebFetch(domain:platform.tripo3d.ai)",
       "WebFetch(domain:apidog.com)",
       "WebSearch",
-      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__get_console_message"
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__get_console_message",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(gh api:*)"
     ]
   }
 }

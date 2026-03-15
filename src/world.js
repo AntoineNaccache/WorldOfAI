@@ -146,7 +146,7 @@ export async function buildGeneratedRoom(scene, def, onProgress) {
   // Room-specific environment details
   if (def._isParis) _buildParisStreetDetails(scene, def);
   if (def._isMarty) _buildMartyGarageDetails(scene);
-  if (def._isDumas) _buildDumasStudyDetails(scene);
+  if (def._isDumas) _buildDumasStudyDetails(scene, def);
 
   // DESK + COMPUTER (skip for Paris street — it has no desk)
   if (!def._isParis) {
@@ -458,7 +458,9 @@ function _buildMartyGarageDetails(scene) {
 
 // ---- Alexandre Dumas's study details ----------------------------------------
 
-function _buildDumasStudyDetails(scene) {
+function _buildDumasStudyDetails(scene, def = {}) {
+  // If pre-generated bookshelf model is being loaded as the room object, skip procedural ones
+  const hasPregenBookshelf = !!def.object?._pregenModelUrl;
   const woodMat   = makeMat('#5c3010');
   const darkWood  = makeMat('#3a1e08');
   const paperMat  = makeMat('#e8d8a0');
@@ -473,36 +475,37 @@ function _buildDumasStudyDetails(scene) {
     scene.add(plank);
   }
 
-  // Bookshelf left wall — floor to ceiling
-  const shelfBodyL = new THREE.Mesh(new THREE.BoxGeometry(0.3, 2.8, 3.5), darkWood);
-  shelfBodyL.position.set(-5.7, 1.4, -2);
-  scene.add(shelfBodyL);
-  // Book spines
-  const bookColors = ['#8b1a1a','#1a3a8b','#1a7a2a','#8b6a1a','#5a1a8b','#7a3a1a','#1a6a7a','#8b3a5a'];
-  for (let shelf = 0; shelf < 5; shelf++) {
-    for (let b = 0; b < 6; b++) {
-      const book = new THREE.Mesh(
-        new THREE.BoxGeometry(0.04, 0.28 + Math.random() * 0.12, 0.18),
-        makeMat(bookColors[(shelf * 6 + b) % bookColors.length])
-      );
-      book.position.set(-5.55, 0.4 + shelf * 0.52, -3.5 + b * 0.56);
-      book.rotation.y = (Math.random() - 0.5) * 0.05;
-      scene.add(book);
+  // Bookshelf left wall — floor to ceiling (only built if no pre-gen model is available)
+  if (!hasPregenBookshelf) {
+    const shelfBodyL = new THREE.Mesh(new THREE.BoxGeometry(0.3, 2.8, 3.5), darkWood);
+    shelfBodyL.position.set(-5.7, 1.4, -2);
+    scene.add(shelfBodyL);
+    const bookColors = ['#8b1a1a','#1a3a8b','#1a7a2a','#8b6a1a','#5a1a8b','#7a3a1a','#1a6a7a','#8b3a5a'];
+    for (let shelf = 0; shelf < 5; shelf++) {
+      for (let b = 0; b < 6; b++) {
+        const book = new THREE.Mesh(
+          new THREE.BoxGeometry(0.04, 0.28 + Math.random() * 0.12, 0.18),
+          makeMat(bookColors[(shelf * 6 + b) % bookColors.length])
+        );
+        book.position.set(-5.55, 0.4 + shelf * 0.52, -3.5 + b * 0.56);
+        book.rotation.y = (Math.random() - 0.5) * 0.05;
+        scene.add(book);
+      }
     }
-  }
 
-  // Bookshelf right wall
-  const shelfBodyR = new THREE.Mesh(new THREE.BoxGeometry(0.3, 2.8, 3.5), darkWood);
-  shelfBodyR.position.set(5.7, 1.4, -2);
-  scene.add(shelfBodyR);
-  for (let shelf = 0; shelf < 5; shelf++) {
-    for (let b = 0; b < 6; b++) {
-      const book = new THREE.Mesh(
-        new THREE.BoxGeometry(0.04, 0.28 + Math.random() * 0.1, 0.18),
-        makeMat(bookColors[(shelf * 7 + b) % bookColors.length])
-      );
-      book.position.set(5.55, 0.4 + shelf * 0.52, -3.5 + b * 0.56);
-      scene.add(book);
+    // Bookshelf right wall
+    const shelfBodyR = new THREE.Mesh(new THREE.BoxGeometry(0.3, 2.8, 3.5), darkWood);
+    shelfBodyR.position.set(5.7, 1.4, -2);
+    scene.add(shelfBodyR);
+    for (let shelf = 0; shelf < 5; shelf++) {
+      for (let b = 0; b < 6; b++) {
+        const book = new THREE.Mesh(
+          new THREE.BoxGeometry(0.04, 0.28 + Math.random() * 0.1, 0.18),
+          makeMat(bookColors[(shelf * 7 + b) % bookColors.length])
+        );
+        book.position.set(5.55, 0.4 + shelf * 0.52, -3.5 + b * 0.56);
+        scene.add(book);
+      }
     }
   }
 
