@@ -10,6 +10,8 @@ Built for the **GameDev Hackathon** — March 15, 2025 · Tool Track.
 
 You wake up in your bedroom. Your mother Virginie is there. Something feels off.
 
+------------------------------------------------------------SPOILER WARNING------------------------------------------------------
+
 Through a series of AI-powered conversations and AI-generated worlds, you slowly uncover your true identity: **a time traveler**. Your mission — prevent the assassination of King Henri IV of France on May 14, 1610, on Rue de la Ferronnerie, Paris.
 
 To win, you must convince Henri IV to turn his carriage back to the Louvre — before François Ravaillac strikes.
@@ -136,12 +138,3 @@ Fast-path triggers skip AI generation for story-critical rooms:
 | Model loading | Three.js `GLTFLoader` + `AnimationMixer` for GLB animations |
 | Input | Pointer Lock API + keyboard events |
 
----
-
-## Hackathon Criteria
-
-**World generation is central to gameplay** — every location beyond the bedroom is AI-generated on demand from a plain-text prompt. The generated JSON directly drives room geometry, colors, NPC personality, and Tripo asset generation.
-
-**Generation affects mechanics, progression, and interaction** — the AI-generated NPC chatbot shapes what the player learns and where they go next. Discovery of story-critical locations is gated by conversation with generated NPCs. The player's path through AI rooms is the core progression loop.
-
-**Tool Track** — Tripo3D for real-time 3D asset generation, Three.js as a lightweight zero-dependency renderer, Claude as world-builder and conversational AI engine.
