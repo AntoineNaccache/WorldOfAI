@@ -1,3 +1,7 @@
+# 03/15 Arcade AI Gamejam 1st Place project
+
+![1st_place](1st_place.jpeg)
+
 # Temporal Drift — AI-Generated First-Person Adventure
 
 > *A browser-based first-person game where AI generates the world around you, and every NPC is a living chatbot with a secret to share.*
